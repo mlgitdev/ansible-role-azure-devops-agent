@@ -200,10 +200,6 @@
     loop_var: capability
   become: true
 
-- name: Print Debug
-  debug:
-    msg: "{{ az_devops_agent_user_capabilities | default({}) | dict2items }}"
-    
 - name: Install agent service
   command: ./svc.sh install {{ az_devops_agent_user }}
   become: true
