@@ -10,13 +10,15 @@
 - name: Create directories
   file:
     state: directory
-    path: "{{ item }}"
+    path: "{{ directory }}"
     owner: "{{ az_devops_agent_user }}"
     group: "{{ az_devops_agent_group }}"
     mode: 0755
   loop:
     - "{{ az_devops_agent_folder }}"
     - "{{ az_devops_work_folder }}"
+  loop_control:
+    loop_var: directory
   become: true
 
 - name: Install dependencies
@@ -87,7 +89,6 @@
     service_is_installed: "{{ svc_status.stdout is defined and svc_status.stdout is not regex('not installed') }}"
     service_is_running: "{{ svc_status.stdout is defined and svc_status.stdout is regex('active \\(running\\)') }}"
     is_requested_version: "{{ bin_agent_listener.stat.exists and agent_listener_version.stdout is defined and agent_listener_version.stdout == az_devops_agent_version }}"
-
 
 - name: Set Agent config facts combined
   set_fact:
@@ -189,14 +190,20 @@
   community.general.ini_file:
     path: "{{ az_devops_agent_folder }}/.env"
     section: null
-    option: "{{ item.key }}"
-    value: "{{ item.value }}"
+    option: "{{ capability.key }}"
+    value: "{{ capability.value }}"
     no_extra_spaces: yes
     owner: "{{ az_devops_agent_user }}"
     group: "{{ az_devops_agent_group }}"
   loop: "{{ az_devops_agent_user_capabilities | default({}) | dict2items }}"
+  loop_control:
+    loop_var: capability
   become: true
 
+- name: Print Debug
+  debug:
+    msg: "{{ az_devops_agent_user_capabilities | default({}) | dict2items }}"
+    
 - name: Install agent service
   command: ./svc.sh install {{ az_devops_agent_user }}
   become: true
